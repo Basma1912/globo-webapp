@@ -42,27 +42,9 @@ resource "aws_instance" "main" {
     "Name" = "${local.name_prefix}-webapp-${count.index}"
   })
 
-  # Provisioner Stuff
-  connection {
-    type        = "ssh"
-    user        = "ec2-user"
-    port        = "22"
-    host        = self.public_ip
-    private_key = module.ssh_keys.private_key_openssh
-  }
-
-  provisioner "file" {
-    source      = "./templates/userdata.sh"
-    destination = "/home/ec2-user/userdata.sh"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "chmod +x /home/ec2-user/userdata.sh",
-      "sh /home/ec2-user/userdata.sh",
-    ]
-    on_failure = continue
-  }
+  user_data_replace_on_change = true
+  # The templatefile function starts with the file you want to reference and then a map of values you want to replace in the file.
+  user_data = templatefile("./templates/userdata.sh", { playbook_repository = var.playbook_repository })
 
 }
 
